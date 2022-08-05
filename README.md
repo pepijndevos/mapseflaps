@@ -19,4 +19,4 @@ In order to make tileserver-gl render the toner style, you need to edit `style.j
   },
 ```
 
-By running `node . --verbose` you can see the default config file. Save it  as `config.json` and change it to point to the toner style.
+By running `node . --verbose` you can see the default config file. Save it  as `config.json` and change it to point to the toner style. I've also added `"tileMargin": 1` to try and avoid cut labels.
