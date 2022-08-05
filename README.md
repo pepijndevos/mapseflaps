@@ -9,7 +9,7 @@ Tiles:
 * served with https://github.com/pepijndevos/microtileserver-gl
 * styled with https://github.com/openmaptiles/maptiler-toner-gl-style
 
-In order to make tileserver-gl render the toner style, you need to edit `style.json` to use
+In order to make tileserver-gl render the toner style, you need to edit `style.json` to insert a valid API key for `glyphs` and use
 ```json
   "sources": {
     "openmaptiles": {
