@@ -79,6 +79,7 @@ def draw_map(lat, lon, zoom):
                 display.drawPng(dx*64, dy*64, tile)
 
     display.drawCircle(my_x, my_y, 5, 0, 360, False, 0)
+    display.drawText(0, display.height()-10, "(C) OpenMapTiles (C) OpenStreetMap contributors", 0, "7x5")
     display.flush(display.FLAG_LUT_GREYSCALE)
 
 zoom = 12
