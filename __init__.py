@@ -82,8 +82,8 @@ def draw_map(lat, lon, zoom):
     display.flush(display.FLAG_LUT_GREYSCALE)
 
 zoom = 12
-lat = 52.189054
-lon = 6.903123
+lat = 52
+lon = 6
 
 draw_map(lat, lon, zoom)
 
