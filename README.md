@@ -3,6 +3,8 @@ A GPS mapping application for the SHA2017 badge, and possibly other platfroms
 
 Requires https://github.com/badgeteam/ESP32-platform-firmware/pull/246 on the SHA badge to be able to draw PNGs without using a 32kb buffer.
 
+Requires https://github.com/pepijndevos/Adafruit_MicroPython_GPS for GPS parsing
+
 Tiles:
 
 * generated with https://github.com/openmaptiles/openmaptiles

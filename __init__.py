@@ -4,10 +4,16 @@ import urequests
 import display
 import buttons
 import time
-import os 
+import os
+import neopixel
+from machine import UART
+from mapseflaps.adafruit_gps import GPS
 
-urltmpl = "http://192.168.1.121:8080/styles/toner/{z}/{x}/{y}.png"
+urltmpl = "http://vps.pepijndevos.nl:8181/styles/toner/{z}/{x}/{y}.png"
 pathtmpl = "/sd/tiles/{z}/{x}/{y}.png"
+
+wifi.connect()
+neopixel.enable()
 
 def exists(filename):
     try:
@@ -45,12 +51,8 @@ def get_tile(x, y, zoom):
         print("sd")
         with open(path, "rb") as f:
             return f.read()
-    else:
+    elif wifi.status():
         print("wifi")
-        if not wifi.status():
-            wifi.connect()
-            while not wifi.status(): time.sleep(1)
-
         url = urltmpl.format(z=zoom, x=x, y=y)
         res = urequests.get(url, headers={"User-Agent": "ESP32 badge"})
         if res.status_code == 200:
@@ -59,34 +61,40 @@ def get_tile(x, y, zoom):
             return res.content
         else:
             print(res.text)
+    with open("/media/alert.png", "rb") as f:
+        return f.read()
 
 def draw_map(lat, lon, zoom):
-    mid_x, mid_y = deg2num(lat, lon, zoom)
-    my_x, my_y = deg2rem(lat, lon, zoom)
-    tl_x = mid_x-2
-    my_x += 128
-    if my_y > 32:
-        tl_y = mid_y
-    else:
-        tl_y = mid_y-1
-        my_y += 64
+    global last_pos
+    try:
+        neopixel.send(bytes([0xf, 0x0, 0x0]))
+        mid_x, mid_y = deg2num(lat, lon, zoom)
+        my_x, my_y = deg2rem(lat, lon, zoom)
+        tl_x = mid_x-2
+        my_x += 128
+        if my_y > 32:
+            tl_y = mid_y
+        else:
+            tl_y = mid_y-1
+            my_y += 64
 
+        for dx in range(5):
+            for dy in range(2):
+                tile = get_tile(tl_x+dx, tl_y+dy, zoom)
+                if tile:
+                    display.drawPng(dx*64, dy*64, tile)
 
-    for dx in range(5):
-        for dy in range(2):
-            tile = get_tile(tl_x+dx, tl_y+dy, zoom)
-            if tile:
-                display.drawPng(dx*64, dy*64, tile)
+        display.drawText(0, display.height()-10, "(C) OpenMapTiles (C) OpenStreetMap contributors", 0, "7x5")
+        display.drawCircle(my_x, my_y, 5, 0, 360, False, 0)
+        display.flush(display.FLAG_LUT_GREYSCALE)
+        neopixel.send(bytes([0x0, 0x0, 0x0]))
+    except Exception as e:
+        print(e)
+        neopixel.send(bytes([0x0, 0xf, 0x0]))
 
-    display.drawCircle(my_x, my_y, 5, 0, 360, False, 0)
-    display.drawText(0, display.height()-10, "(C) OpenMapTiles (C) OpenStreetMap contributors", 0, "7x5")
-    display.flush(display.FLAG_LUT_GREYSCALE)
-
-zoom = 12
+zoom = 18
 lat = 52
 lon = 6
-
-draw_map(lat, lon, zoom)
 
 def zoom_in(pressed):
     global zoom
@@ -124,9 +132,32 @@ def move_right(pressed):
         lon += 180/2**zoom
         draw_map(lat, lon, zoom)
 
+# https://badge.team/docs/badges/sha2017/hardware/#add-ons
+uart = UART(1, 9600, tx=33, rx=12)
+gps = GPS(uart, True)
+
 buttons.attach(buttons.BTN_A, zoom_in)
 buttons.attach(buttons.BTN_B, zoom_out)
 buttons.attach(buttons.BTN_UP, move_up)
 buttons.attach(buttons.BTN_DOWN, move_down)
 buttons.attach(buttons.BTN_LEFT, move_left)
 buttons.attach(buttons.BTN_RIGHT, move_right)
+
+draw_map(lat, lon, zoom)
+while True:
+    try:
+        t = time.ticks_ms()
+        while time.ticks_ms() < t+5000:
+            gps.update()
+            time.sleep(0.1)
+
+        if gps.has_fix:
+            print("Updating...")
+            lat = gps.latitude
+            lon = gps.longitude
+            draw_map(lat, lon, zoom)
+        else:
+            print("No fix")
+    except Exception as e:
+        print(e)
+        neopixel.send(bytes([0x0, 0xf, 0x0]))
