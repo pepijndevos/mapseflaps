@@ -7,7 +7,7 @@ import time
 import os
 import neopixel
 from machine import UART
-from mapseflaps.adafruit_gps import GPS
+from adafruit_gps import GPS
 
 urltmpl = "http://vps.pepijndevos.nl:8181/styles/toner/{z}/{x}/{y}.png"
 pathtmpl = "/sd/tiles/{z}/{x}/{y}.png"
