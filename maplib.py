@@ -109,30 +109,32 @@ class Mapview:
     def draw_chrome(self):
         print("(C) OpenMapTiles (C) OpenStreetMap contributors")
 
-    def draw_location(self, my_x, my_y):
-        if self.gps and self.gps.track_angle_deg:
-            self.draw_triangle()
-        else:
-            self.draw_circle(my_x, my_y, 5, 0x000000)
-            self.draw_circle(my_x, my_y, 3, 0xffffff)
-
     def draw_map(self):
         try:
             self.signal_busy()
+            color, _ = self.get_style("background", {})
+            self.draw_fill(color)
             mid_x, mid_y = deg2num(self.lat, self.lon, self.zoom)
             my_x, my_y = deg2rem(self.lat, self.lon, self.zoom)
             size = self.tilesize
-            nx = math.ceil(self.width/2/size)
-            ny = math.ceil(self.height/2/size)
+            left_x = int(self.width/2-my_x*size)
+            top_y = int(self.height/2-my_y*size)
+            right_x = int(self.width/2+(1-my_x)*size)
+            bot_y = int(self.height/2+(1-my_y)*size)
+            ty = math.ceil(top_y/size)
+            by = math.ceil((self.height-bot_y)/size)
+            lx = math.ceil(left_x/size)
+            rx = math.ceil((self.width-right_x)/size)
 
-            for dx in range(-nx, nx+1):
-                for dy in range(-ny, ny+1):
+            for dx in range(-lx, rx+1):
+                for dy in range(-ty, by+1):
                     tile = self.get_tile(mid_x+dx, mid_y+dy)
                     scr_x = int(self.width/2+(dx-my_x)*size)
                     scr_y = int(self.height/2+(dy-my_y)*size)
                     self.draw_tile(scr_x, scr_y, tile) # can be None
 
-            self.draw_location(self.width//2, self.height//2)
+            color, size = self.get_style("me", {})
+            self.draw_point(self.width//2, self.height//2, color, size)
             self.draw_chrome()
             self.flush()
             self.signal_done()
