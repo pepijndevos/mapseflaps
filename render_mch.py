@@ -1,6 +1,9 @@
 import wifi
 import display
 import buttons
+import machine
+import adafruit_gps
+import time
 from maplib import Mapview
 # from mvt import VectorMixin
 
@@ -10,15 +13,22 @@ class BadgeteamMapview(Mapview):
     height=240
     pathtmpl = "/sd/osmtiles/{z}/{x}/{y}.png"
 
+    def __init__(self):
+        self.gps = adafruit_gps.GPS_GtopI2C(machine.I2C(0))
+
+    def get_style(self, name, tags):
+        if name=="background":
+            return 0xffffff, 0
+        if name=="me":
+            return 0xff0000, 5
+
     def draw_tile(self, x, y, path):
         print("draw png", x, y, path)
         with open(path, 'rb') as f:
             display.drawPng(x, y, f.read())
 
-    def draw_point(self, x, y, name, tags):
-        display.drawCircle(x, y, 5, 0, 360, True, 0xff0000)
-        if "name" in tags:
-            display.drawText(x, y, tags["name"], 0x000000, "7x5")
+    def draw_point(self, x, y, color, size):
+        display.drawCircle(x, y, size, 0, 360, True, color)
 
     def draw_line(self, x1, y1, x2, y2, name, tags):
         display.drawLine(x1, y1, x2, y2, 0x0000ff)
@@ -38,10 +48,7 @@ class BadgeteamMapview(Mapview):
 #     tilesize = 4096
 
 wifi.connect()
-# m = PygameVectorMapview()
 m = BadgeteamMapview()
-
-# m.draw_map()
 
 buttons.attach(buttons.BTN_A, m.zoom_in)
 buttons.attach(buttons.BTN_B, m.zoom_out)
@@ -49,3 +56,8 @@ buttons.attach(buttons.BTN_UP, m.move_up)
 buttons.attach(buttons.BTN_DOWN, m.move_down)
 buttons.attach(buttons.BTN_LEFT, m.move_left)
 buttons.attach(buttons.BTN_RIGHT, m.move_right)
+buttons.attach(buttons.BTN_SELECT, m.track)
+
+while True:
+    m.update()
+    time.sleep(0.1)

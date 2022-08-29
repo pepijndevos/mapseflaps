@@ -21,19 +21,18 @@ def exists(filename):
     except OSError:
         return False
 
-def deg2num(lat_deg, lon_deg, zoom):
+def deg2xy(lat_deg, lon_deg, zoom):
     lat_rad = math.radians(lat_deg)
     n = 2.0 ** zoom
-    xtile = int((lon_deg + 180.0) / 360.0 * n)
-    ytile = int((1.0 - math.asinh(math.tan(lat_rad)) / math.pi) / 2.0 * n)
+    xtile = (lon_deg + 180.0) / 360.0 * n
+    ytile = (1.0 - math.asinh(math.tan(lat_rad)) / math.pi) / 2.0 * n
     return (xtile, ytile)
 
+def deg2num(lat_deg, lon_deg, zoom):
+    return [int(x) for x in deg2xy(lat_deg, lon_deg, zoom)]
+
 def deg2rem(lat_deg, lon_deg, zoom):
-    lat_rad = math.radians(lat_deg)
-    n = 2.0 ** zoom
-    xtile = ((lon_deg + 180.0) / 360.0 * n) % 1
-    ytile = ((1.0 - math.asinh(math.tan(lat_rad)) / math.pi) / 2.0 * n) % 1
-    return (xtile, ytile)
+    return [x%1 for x in deg2xy(lat_deg, lon_deg, zoom)]
 
 def num2deg(xtile, ytile, zoom):
   n = 2.0 ** zoom
@@ -60,6 +59,7 @@ class Mapview:
     tilesize = 256
     width = 800
     height = 600
+    treshold = 5
     urltmpl = "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
     pathtmpl = "tiles/{z}/{x}/{y}.png"
     zoom = 18
@@ -146,9 +146,13 @@ class Mapview:
         if self.gps:
             self.gps.update()
             if self.tracking and self.gps.has_fix:
-                self.lat = self.gps.latitude
-                self.lon = self.gps.longitude
-                self.draw_map()
+                curx, cury = deg2xy(self.lat, self.lon, self.zoom)
+                newx, newy = deg2xy(self.gps.latitude, self.gps.longitude, self.zoom)
+                dist = math.sqrt((curx-newx)**2 + (cury-newy)**2)*self.tilesize
+                if dist > self.treshold:
+                    self.lat = self.gps.latitude
+                    self.lon = self.gps.longitude
+                    self.draw_map()
 
     def zoom_in(self, pressed):
         if pressed:
@@ -163,21 +167,30 @@ class Mapview:
     def move_up(self, pressed):
         if pressed:
             self.lat += tilesize(self.lat, self.lon, self.zoom)[0]/self.tilesize*self.height/4
+            self.tracking = False
             self.draw_map()
 
     def move_down(self, pressed):
         if pressed:
             self.lat -= tilesize(self.lat, self.lon, self.zoom)[0]/self.tilesize*self.height/4
+            self.tracking = False
             self.draw_map()
 
     def move_left(self, pressed):
         if pressed:
             self.lon -= tilesize(self.lat, self.lon, self.zoom)[1]/self.tilesize*self.width/4
+            self.tracking = False
             self.draw_map()
 
     def move_right(self, pressed):
         if pressed:
             self.lon += tilesize(self.lat, self.lon, self.zoom)[1]/self.tilesize*self.width/4
+            self.tracking = False
+            self.draw_map()
+
+    def track(self, pressed):
+        if pressed:
+            self.tracking = True
             self.draw_map()
 
 if __name__ == "__main__":
