@@ -9,10 +9,21 @@ try:
 except ImportError:
     pass
 try:
-    import adafruit_requests as requests
+    import adafruit_requests
+    import wifi
+    import socketpool
+    import ssl
+    pool = socketpool.SocketPool(wifi.radio)
+    requests = adafruit_requests.Session(pool, ssl.create_default_context())
 except ImportError:
     pass
 
+# some circuitpython don't have hyperbolics but do have half a numpy
+if hasattr(math, 'sinh') and hasattr(math, 'asinh'):
+    sinh = math.sinh
+    asinh = math.asinh
+else:
+    from ulab.numpy import asinh, sinh
 
 def exists(filename):
     try:
@@ -25,7 +36,7 @@ def deg2xy(lat_deg, lon_deg, zoom):
     lat_rad = math.radians(lat_deg)
     n = 2.0 ** zoom
     xtile = (lon_deg + 180.0) / 360.0 * n
-    ytile = (1.0 - math.asinh(math.tan(lat_rad)) / math.pi) / 2.0 * n
+    ytile = (1.0 - asinh(math.tan(lat_rad)) / math.pi) / 2.0 * n
     return (xtile, ytile)
 
 def deg2num(lat_deg, lon_deg, zoom):
@@ -37,7 +48,7 @@ def deg2rem(lat_deg, lon_deg, zoom):
 def num2deg(xtile, ytile, zoom):
   n = 2.0 ** zoom
   lon_deg = xtile / n * 360.0 - 180.0
-  lat_rad = math.atan(math.sinh(math.pi * (1 - 2 * ytile / n)))
+  lat_rad = math.atan(sinh(math.pi * (1 - 2 * ytile / n)))
   lat_deg = math.degrees(lat_rad)
   return (lat_deg, lon_deg)
 
