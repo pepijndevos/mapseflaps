@@ -76,8 +76,8 @@ print("Creating display")
 
 
 class DisplayioMapview(Mapview):
-    width=400
-    height=300
+    width=480
+    height=176
     pathtmpl = "/sd/tiles/{z}/{x}/{y}.png"
     urltmpl = "http://vps.pepijndevos.nl:8181/styles/toner/{z}/{x}/{y}.png"
     tilesize = 64
@@ -90,7 +90,8 @@ class DisplayioMapview(Mapview):
             display_bus,
             width=self.width,
             height=self.height,
-            highlight_color=0xFF0000,
+            rotation=270,
+            # highlight_color=0xFF0000,
             busy_pin=busy_pin,
         )
         self.group = displayio.Group()
@@ -123,8 +124,6 @@ class DisplayioMapview(Mapview):
         self.display.refresh()
         self.group = displayio.Group()
         print("flush")
-        time.sleep(120)
-        print("slept for a bit")
 
 
 m = DisplayioMapview(display_bus, epd_busy)
