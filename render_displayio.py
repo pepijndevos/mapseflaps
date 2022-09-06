@@ -10,6 +10,7 @@ import wifi
 from secrets import secrets
 from maplib import Mapview
 from adafruit_display_shapes.circle import Circle
+from adafruit_display_shapes.rect import Rect
 
 print("hello world")
 
@@ -117,7 +118,7 @@ class DisplayioMapview(Mapview):
         self.group.append(Circle(x, y, size, fill=color))
 
     def draw_fill(self, color):
-        print("fill")
+        self.group.append(Rect(0, 0, self.width, self.height, fill=color))
 
     def flush(self):
         self.display.show(self.group)
